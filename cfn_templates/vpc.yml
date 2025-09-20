@@ -1,0 +1,199 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This template creates a custom VPC with two public and two private subnets
+  across two Availability Zones, an Internet Gateway for public traffic, and a
+  NAT Gateway for private outbound traffic.
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC
+  PublicSubnetACidr:
+    Type: String
+    Default: 10.0.11.0/24
+    Description: CIDR block for the public subnet A
+  PublicSubnetBCidr:
+    Type: String
+    Default: 10.0.21.0/24
+    Description: CIDR block for the public subnet B
+  PrivateSubnetACidr:
+    Type: String 
+    Default: 10.0.12.0/24
+    Description: CIDR block for the private subnet A
+  PrivateSubnetBCidr:
+    Type: String
+    Default: 10.0.22.0/24
+    Description: CIDR block for the private subnet B
+
+Resources:
+  # Create the VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-VPC"
+
+  # Create Internet gateway and attach to VPC
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-IGW"
+    
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public subnets in two AZs
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetACidr
+      AvailabilityZone: !Select [0, !GetAZs ''] #gets the first AZ in the region 
+      MapPublicIpOnLaunch: true #automatically assigns public IPs to all instances launched in the subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicSubnetA"
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetBCidr
+      AvailabilityZone: !Select [1, !GetAZs ''] #gets the second AZ in the region
+      MapPublicIpOnLaunch: true #automatically assigns public IPs to all instances launched in the subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicSubnetB"
+
+  # Private subnets in the same two AZs
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetACidr
+      AvailabilityZone: !Select [0, !GetAZs ''] #gets the first AZ in the region
+      MapPublicIpOnLaunch: false #does not assign public IPs
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PrivateSubnetA"
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetBCidr
+      AvailabilityZone: !Select [1, !GetAZs ''] #gets the second AZ in the region
+      MapPublicIpOnLaunch: false #does not assign public IPs
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PrivateSubnetB"
+  
+  # Route table for public subnets
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PublicRT"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachInternetGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  AssociatePublicSubnetA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  AssociatePublicSubnetB:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  # NAT Gateway for private subnets to access the internet
+
+  ElasticIPForNAT:
+    Type: AWS::EC2::EIP
+    DependsOn: AttachInternetGateway #the resource must be created after the IGW is attached to the VPC
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NAT-EIP"
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt ElasticIPForNAT.AllocationId
+      SubnetId: !Ref PublicSubnetA #NAT Gateway must be in a public subnet
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-NAT-GW"  
+
+  # Route table for private subnets
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-PrivateRT" 
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0 
+      NatGatewayId: !Ref NATGateway
+
+  AssociatePrivateSubnetA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable    
+
+  AssociatePrivateSubnetB:    
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+  
+Outputs:
+  VPCId:
+    Description: VPC ID
+    Value: !Ref VPC
+  PublicSubnetAId:
+    Description: Public Subnet A ID
+    Value: !Ref PublicSubnetA
+  PublicSubnetBId:
+    Description: Public Subnet B ID
+    Value: !Ref PublicSubnetB
+  PrivateSubnetAId:
+    Description: Private Subnet A ID
+    Value: !Ref PrivateSubnetA
+  PrivateSubnetBId:
+    Description: Private Subnet B ID
+    Value: !Ref PrivateSubnetB
+  InternetGatewayId:
+    Description: Internet Gateway ID
+    Value: !Ref InternetGateway
+  NATGatewayId:
+    Description: NAT Gateway ID
+    Value: !Ref NATGateway  
