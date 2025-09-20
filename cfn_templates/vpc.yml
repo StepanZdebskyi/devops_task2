@@ -179,18 +179,18 @@ Outputs:
   VPCId:
     Description: VPC ID
     Value: !Ref VPC
-  PublicSubnetAId:
-    Description: Public Subnet A ID
-    Value: !Ref PublicSubnetA
-  PublicSubnetBId:
-    Description: Public Subnet B ID
-    Value: !Ref PublicSubnetB
-  PrivateSubnetAId:
-    Description: Private Subnet A ID
-    Value: !Ref PrivateSubnetA
-  PrivateSubnetBId:
-    Description: Private Subnet B ID
-    Value: !Ref PrivateSubnetB
+    Export:
+      Name: !Sub '${AWS::StackName}-VPCID' # <-- should export the VPC ID for use in other stacks
+  PublicSubnetIds:
+    Description: The IDs of the public subnets, comma-separated.
+    Value: !Join [",", [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+    Export:
+      Name: !Sub '${AWS::StackName}-PublicSubnetIds' #<-- should export the public subnet IDs for use in other stacks
+  PrivateSubnetIds:
+    Description: The IDs of the private subnets, comma-separated.
+    Value: !Join [",", [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]
+    Export:
+      Name: !Sub '${AWS::StackName}-PrivateSubnetIds'
   InternetGatewayId:
     Description: Internet Gateway ID
     Value: !Ref InternetGateway
