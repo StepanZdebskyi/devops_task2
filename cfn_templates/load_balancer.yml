@@ -14,7 +14,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for the Load Balancer
-      VpcId: !ImportValue 
+      VpcId: !ImportValue
         Fn::Sub: "${VPCStackName}-VPCID"
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -31,12 +31,12 @@ Resources:
     Properties:
       Name: !Sub "${AWS::StackName}-ALB"
       Scheme: internet-facing
-      Subnets: !Split [ ",", !ImportValue !Sub '${VPCStackName}-PublicSubnetIds' ] # Use public subnets from VPC stack
+      Subnets: !Split
+        - ","
+        - !ImportValue
+          Fn::Sub: "${VPCStackName}-PublicSubnetIds" # Use public subnets from VPC stack
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Sub "${AWS::StackName}-ALB" 
 
   # Create the Target Group
   TargetGroup:
