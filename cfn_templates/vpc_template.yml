@@ -25,6 +25,9 @@ Parameters:
     Type: String
     Default: 10.0.22.0/24
     Description: CIDR block for the private subnet B
+  ProjectPrefix:
+    Type: String
+    Description: A prefix used to name the nested stacks and resources.
 
 Resources:
   # Create the VPC
@@ -36,7 +39,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-VPC"
+          Value: !Sub "${ProjectPrefix}-VPC"
 
   # Create Internet gateway and attach to VPC
   InternetGateway:

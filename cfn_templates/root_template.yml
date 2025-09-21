@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  This is the root orchestrator stack. It deploys the entire application
+  by creating nested stacks for the VPC, Load Balancer, and Application tiers.
+  Deploying this single template will build the entire environment.
+
+Parameters:
+  ProjectPrefix:
+    Type: String
+    Description: A prefix used to name the nested stacks and resources.
+  TemplateBaseURL:
+    Type: String
+    Description: >
+      The base URL of the S3 bucket where your templates are stored, including the trailing slash
+      (e.g., https://s3.us-east-1.amazonaws.com/my-cfn-templates/).
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    Description: The EC2 instance type for the application servers.
+
+Resources:
+  # 1. Deploy the Networking Stack using vpc_template.yml
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      StackName: !Sub '${ProjectPrefix}-VPC'
+      TemplateURL: !Sub '${TemplateBaseURL}vpc_template.yml'
+      Parameters:
+        ProjectPrefix: !Sub '${ProjectPrefix}'
+
+  # 2. Deploy the Load Balancer Stack using load_balancer_template.yml
+  LoadBalancerStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      # This DependsOn attribute is critical. It tells CloudFormation to wait
+      # until the VPCStack is completely finished before starting this one.
+      DependsOn: VPCStack
+      StackName: !Sub '${ProjectPrefix}-LB'
+      TemplateURL: !Sub '${TemplateBaseURL}load_balancer_template.yml'
+      Parameters:
+        # Here, we pass the physical name of the VPCStack as a parameter.
+        # This allows the load balancer stack to import the VPC's exported values.
+        VPCStackName: !Sub '${ProjectPrefix}-VPC'
+
+  # 3. Deploy the Application Stack using task1_application_template.yml
+  ApplicationStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      # This stack depends on both the VPC and the Load Balancer being ready.
+      DependsOn:
+        - VPCStack
+        - LoadBalancerStack
+      StackName: !Sub '${ProjectPrefix}-test1-app'
+      TemplateURL: !Sub '${TemplateBaseURL}task1_application_template.yml'
+      Parameters:
+        # Pass the required stack names to the application stack so it can
+        # import values from both.
+        VPCStackName: !Sub '${ProjectPrefix}-VPC'
+        LoadBalancerStackName: !Sub '${ProjectPrefix}-LB'
+        InstanceType: !Ref InstanceType

@@ -44,12 +44,14 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for the application instances
-      VpcId: !ImportValue !Sub '${VPCStackName}-VPCID'
+      VpcId: !ImportValue
+        Fn::Sub: '${VPCStackName}-VPCID'
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
-          SourceSecurityGroupId: !ImportValue !Sub '${LoadBalancerStackName}-ALBSG-ID'
+          SourceSecurityGroupId: !ImportValue
+            Fn::Sub: '${LoadBalancerStackName}-ALBSG-ID'
       Tags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-AppSG'
@@ -126,7 +128,34 @@ Resources:
           echo "---"
           echo "Bootstrapping process completed successfully at $(date)."
 
+  # 4. Auto Scaling Group
+  # It also handles registering the instance with the Target Group.
+  AppAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        - !Select
+          - 0 #selects the first private subnet - PrivateSubnetA
+          - !Split
+            - ","
+            - !ImportValue
+                Fn::Sub: '${VPCStackName}-PrivateSubnetIds'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref AppLaunchTemplate
+        Version: !GetAtt AppLaunchTemplate.LatestVersionNumber
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      TargetGroupARNs:
+        # Attaching the instance to the Target Group.
+        - !ImportValue
+            Fn::Sub: '${LoadBalancerStackName}-TargetGroupARN'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-AppInstance'
+          PropagateAtLaunch: true
+
 Outputs:
   InstanceId:
     Description: The ID of the created EC2 Instance.
-    Value: !Ref AppInstance
+    Value: !Ref AppLaunchTemplate
