@@ -7,12 +7,13 @@ Description: >
 Parameters:
   ProjectPrefix:
     Type: String
+    Default: "stepan"
     Description: A prefix used to name the nested stacks and resources.
   TemplateBaseURL:
     Type: String
+    Default: "https://s3.eu-west-1.amazonaws.com/stepan-cfn-templates-eu-west-1/cfn_templates/"
     Description: >
-      The base URL of the S3 bucket where your templates are stored, including the trailing slash
-      (e.g., https://s3.us-east-1.amazonaws.com/my-cfn-templates/).
+      The base URL of the S3 bucket where your templates are stored, including the trailing slash.
   InstanceType:
     Type: String
     Default: t3.micro
