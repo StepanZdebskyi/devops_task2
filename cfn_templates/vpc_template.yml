@@ -47,7 +47,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-IGW"
+          Value: !Sub "${ProjectPrefix}-IGW"
     
   AttachInternetGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -65,7 +65,7 @@ Resources:
       MapPublicIpOnLaunch: true #automatically assigns public IPs to all instances launched in the subnet
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PublicSubnetA"
+          Value: !Sub "${ProjectPrefix}-PublicSubnetA"
 
   PublicSubnetB:
     Type: AWS::EC2::Subnet
@@ -76,7 +76,7 @@ Resources:
       MapPublicIpOnLaunch: true #automatically assigns public IPs to all instances launched in the subnet
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PublicSubnetB"
+          Value: !Sub "${ProjectPrefix}-PublicSubnetB"
 
   # Private subnets in the same two AZs
   PrivateSubnetA:
@@ -88,7 +88,7 @@ Resources:
       MapPublicIpOnLaunch: false #does not assign public IPs
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PrivateSubnetA"
+          Value: !Sub "${ProjectPrefix}-PrivateSubnetA"
 
   PrivateSubnetB:
     Type: AWS::EC2::Subnet
@@ -99,8 +99,8 @@ Resources:
       MapPublicIpOnLaunch: false #does not assign public IPs
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PrivateSubnetB"
-  
+          Value: !Sub "${ProjectPrefix}-PrivateSubnetB"
+
   # Route table for public subnets
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
@@ -108,7 +108,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PublicRT"
+          Value: !Sub "${ProjectPrefix}-PublicRT"
 
   PublicRoute:
     Type: AWS::EC2::Route
@@ -139,7 +139,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-NAT-EIP"
+          Value: !Sub "${ProjectPrefix}-NAT-EIP"
 
   NATGateway:
     Type: AWS::EC2::NatGateway
@@ -148,7 +148,7 @@ Resources:
       SubnetId: !Ref PublicSubnetA #NAT Gateway must be in a public subnet
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-NAT-GW"  
+          Value: !Sub "${ProjectPrefix}-NAT-GW"
 
   # Route table for private subnets
   PrivateRouteTable:
@@ -157,7 +157,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-PrivateRT" 
+          Value: !Sub "${ProjectPrefix}-PrivateRT"
 
   PrivateRoute:
     Type: AWS::EC2::Route
@@ -183,17 +183,17 @@ Outputs:
     Description: VPC ID
     Value: !Ref VPC
     Export:
-      Name: !Sub '${AWS::StackName}-VPCID' # <-- should export the VPC ID for use in other stacks
+      Name: !Sub '${ProjectPrefix}-VPCID' # <-- should export the VPC ID for use in other stacks
   PublicSubnetIds:
     Description: The IDs of the public subnets, comma-separated.
     Value: !Join [",", [!Ref PublicSubnetA, !Ref PublicSubnetB]]
     Export:
-      Name: !Sub '${AWS::StackName}-PublicSubnetIds' #<-- should export the public subnet IDs for use in other stacks
+      Name: !Sub '${ProjectPrefix}-PublicSubnetIds' #<-- should export the public subnet IDs for use in other stacks
   PrivateSubnetIds:
     Description: The IDs of the private subnets, comma-separated.
     Value: !Join [",", [!Ref PrivateSubnetA, !Ref PrivateSubnetB]]
     Export:
-      Name: !Sub '${AWS::StackName}-PrivateSubnetIds'
+      Name: !Sub '${ProjectPrefix}-PrivateSubnetIds'
   InternetGatewayId:
     Description: Internet Gateway ID
     Value: !Ref InternetGateway

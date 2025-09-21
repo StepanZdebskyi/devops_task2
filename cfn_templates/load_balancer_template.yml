@@ -4,7 +4,7 @@ Description: >
   in the scope of the 1 task 
 
 Parameters: 
-  VPCStackName:
+  ProjectPrefix:
     Type: String
     Description: The name of the VPC stack to get outputs from
 
@@ -15,7 +15,7 @@ Resources:
     Properties:
       GroupDescription: Security group for the Load Balancer
       VpcId: !ImportValue
-        Fn::Sub: "${VPCStackName}-VPCID"
+        Fn::Sub: "${ProjectPrefix}-VPCID"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -23,18 +23,18 @@ Resources:
           CidrIp: 0.0.0.0/0 # Allow HTTP traffic from anywhere
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-ALB-SG"
+          Value: !Sub "${ProjectPrefix}-ALB-SG"
 
   # Create the Application Load Balancer (internet-facing)
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub "${AWS::StackName}-ALB"
+      Name: !Sub "${ProjectPrefix}-ALB"
       Scheme: internet-facing
       Subnets: !Split
         - ","
         - !ImportValue
-          Fn::Sub: "${VPCStackName}-PublicSubnetIds" # Use public subnets from VPC stack
+          Fn::Sub: "${ProjectPrefix}-PublicSubnetIds" # Use public subnets from VPC stack
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
 
@@ -42,11 +42,11 @@ Resources:
   TargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: !Sub "${AWS::StackName}-TG"
+      Name: !Sub "${ProjectPrefix}-TG"
       Port: 80
       Protocol: HTTP
-      VpcId: !ImportValue 
-        Fn::Sub: "${VPCStackName}-VPCID"
+      VpcId: !ImportValue
+        Fn::Sub: "${ProjectPrefix}-VPCID"
       HealthCheckPath: /
       HealthCheckIntervalSeconds: 30
       HealthCheckTimeoutSeconds: 5
@@ -55,7 +55,7 @@ Resources:
       TargetType: instance #targets an EC2 instance 
       Tags:
         - Key: Name
-          Value: !Sub "${AWS::StackName}-TG"  
+          Value: !Sub "${ProjectPrefix}-TG"
 
   # Create the Listener for the Load Balancer to redirect HTTP traffic to the Target Group
   HTTPListener:
@@ -73,16 +73,16 @@ Outputs:
     Description: DNS name of the Application Load Balancer
     Value: !GetAtt ApplicationLoadBalancer.DNSName
     Export:
-      Name: !Sub "${AWS::StackName}-LoadBalancerDNS"  
+      Name: !Sub "${ProjectPrefix}-LoadBalancerDNS"
 
   TargetGroupARN:
     Description: ARN of the Target Group
     Value: !Ref TargetGroup
     Export:
-      Name: !Sub "${AWS::StackName}-TargetGroupARN" # this value will be used while creating a new instance
+      Name: !Sub "${ProjectPrefix}-TargetGroupARN" # this value will be used while creating a new instance
 
   LoadBalancerSecurityGroupID:
     Description: The ID of the Load Balancer's Security Group.
     Value: !GetAtt LoadBalancerSecurityGroup.GroupId
     Export:
-      Name: !Sub '${AWS::StackName}-ALBSG-ID'
+      Name: !Sub '${ProjectPrefix}-ALBSG-ID'

@@ -33,29 +33,22 @@ Resources:
   LoadBalancerStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      # This DependsOn attribute is critical. It tells CloudFormation to wait
-      # until the VPCStack is completely finished before starting this one.
       DependsOn: VPCStack
       StackName: !Sub '${ProjectPrefix}-LB'
       TemplateURL: !Sub '${TemplateBaseURL}load_balancer_template.yml'
       Parameters:
-        # Here, we pass the physical name of the VPCStack as a parameter.
-        # This allows the load balancer stack to import the VPC's exported values.
-        VPCStackName: !Sub '${ProjectPrefix}-VPC'
+        ProjectPrefix: !Sub '${ProjectPrefix}'
 
   # 3. Deploy the Application Stack using task1_application_template.yml
   ApplicationStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      # This stack depends on both the VPC and the Load Balancer being ready.
       DependsOn:
         - VPCStack
         - LoadBalancerStack
       StackName: !Sub '${ProjectPrefix}-test1-app'
       TemplateURL: !Sub '${TemplateBaseURL}task1_application_template.yml'
       Parameters:
-        # Pass the required stack names to the application stack so it can
-        # import values from both.
-        VPCStackName: !Sub '${ProjectPrefix}-VPC'
+        ProjectPrefix: !Sub '${ProjectPrefix}'
         LoadBalancerStackName: !Sub '${ProjectPrefix}-LB'
         InstanceType: !Ref InstanceType

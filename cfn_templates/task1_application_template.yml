@@ -4,7 +4,7 @@ Description: >
   The instance can't be directly connected to a target group using CFN.
 
 Parameters:
-  VPCStackName:
+  ProjectPrefix:
     Type: String
     Description: The name of the CloudFormation stack that created the VPC (e.g., MyCustomVPC).
   LoadBalancerStackName:
@@ -45,7 +45,7 @@ Resources:
     Properties:
       GroupDescription: Security group for the application instances
       VpcId: !ImportValue
-        Fn::Sub: '${VPCStackName}-VPCID'
+        Fn::Sub: '${ProjectPrefix}-VPCID'
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -54,13 +54,13 @@ Resources:
             Fn::Sub: '${LoadBalancerStackName}-ALBSG-ID'
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-AppSG'
+          Value: !Sub '${ProjectPrefix}-AppSG'
 
   # 3. EC2 Instance in Private Subnet
   AppLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
-      LaunchTemplateName: !Sub '${AWS::StackName}-LaunchTemplate'
+      LaunchTemplateName: !Sub '${ProjectPrefix}-LaunchTemplate'
       LaunchTemplateData:
         ImageId: '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
         InstanceType: !Ref InstanceType
@@ -139,7 +139,7 @@ Resources:
           - !Split
             - ","
             - !ImportValue
-                Fn::Sub: '${VPCStackName}-PrivateSubnetIds'
+                Fn::Sub: '${ProjectPrefix}-PrivateSubnetIds'
       LaunchTemplate:
         LaunchTemplateId: !Ref AppLaunchTemplate
         Version: !GetAtt AppLaunchTemplate.LatestVersionNumber
@@ -152,7 +152,7 @@ Resources:
             Fn::Sub: '${LoadBalancerStackName}-TargetGroupARN'
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-AppInstance'
+          Value: !Sub '${ProjectPrefix}-AppInstance'
           PropagateAtLaunch: true
 
 Outputs:
