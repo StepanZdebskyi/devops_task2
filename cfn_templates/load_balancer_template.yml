@@ -7,6 +7,7 @@ Parameters:
   ProjectPrefix:
     Type: String
     Description: The name of the VPC stack to get outputs from
+    Default: stepan
 
 Resources:
   # Create the Load Balancer security group 
@@ -79,10 +80,16 @@ Outputs:
     Description: ARN of the Target Group
     Value: !Ref TargetGroup
     Export:
-      Name: !Sub "${ProjectPrefix}-TargetGroupARN" # this value will be used while creating a new instance
+      Name: !Sub "${ProjectPrefix}-ALB-TargetGroupARN" # this value will be used while creating a new instance
 
   LoadBalancerSecurityGroupID:
     Description: The ID of the Load Balancer's Security Group.
     Value: !GetAtt LoadBalancerSecurityGroup.GroupId
     Export:
       Name: !Sub '${ProjectPrefix}-ALBSG-ID'
+  
+  LoadBalancerStackName:
+    Description: The name of the Load Balancer stack.
+    Value: !Ref "AWS::StackName"
+    Export:
+      Name: !Sub '${ProjectPrefix}-ALB'

@@ -7,9 +7,11 @@ Parameters:
   ProjectPrefix:
     Type: String
     Description: The name of the CloudFormation stack that created the VPC (e.g., MyCustomVPC).
+    Default: stepan
   LoadBalancerStackName:
     Type: String
     Description: The name of the CloudFormation stack that created the Load Balancer (e.g., MyWebApp-ALB).
+    Default: stepan-ALB
   InstanceType:
     Type: String
     Default: t3.micro
@@ -51,7 +53,7 @@ Resources:
           FromPort: 80
           ToPort: 80
           SourceSecurityGroupId: !ImportValue
-            Fn::Sub: '${LoadBalancerStackName}-ALBSG-ID'
+            Fn::Sub: '${ProjectPrefix}-ALBSG-ID'
       Tags:
         - Key: Name
           Value: !Sub '${ProjectPrefix}-AppSG'

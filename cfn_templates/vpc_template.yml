@@ -28,6 +28,7 @@ Parameters:
   ProjectPrefix:
     Type: String
     Description: A prefix used to name the nested stacks and resources.
+    Default: stepan
 
 Resources:
   # Create the VPC
@@ -200,3 +201,9 @@ Outputs:
   NATGatewayId:
     Description: NAT Gateway ID
     Value: !Ref NATGateway  
+
+  ProjectPrefix:
+    Description: The project prefix used for naming resources.
+    Value: !Ref ProjectPrefix
+    Export:
+      Name: !Sub '${ProjectPrefix}'

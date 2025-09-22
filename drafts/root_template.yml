@@ -24,7 +24,6 @@ Resources:
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
-      StackName: !Sub '${ProjectPrefix}-VPC'
       TemplateURL: !Sub '${TemplateBaseURL}vpc_template.yml'
       Parameters:
         ProjectPrefix: !Sub '${ProjectPrefix}'
@@ -32,9 +31,8 @@ Resources:
   # 2. Deploy the Load Balancer Stack using load_balancer_template.yml
   LoadBalancerStack:
     Type: AWS::CloudFormation::Stack
+    DependsOn: VPCStack
     Properties:
-      DependsOn: VPCStack
-      StackName: !Sub '${ProjectPrefix}-LB'
       TemplateURL: !Sub '${TemplateBaseURL}load_balancer_template.yml'
       Parameters:
         ProjectPrefix: !Sub '${ProjectPrefix}'
@@ -42,11 +40,10 @@ Resources:
   # 3. Deploy the Application Stack using task1_application_template.yml
   ApplicationStack:
     Type: AWS::CloudFormation::Stack
-    Properties:
-      DependsOn:
+    DependsOn:
         - VPCStack
         - LoadBalancerStack
-      StackName: !Sub '${ProjectPrefix}-test1-app'
+    Properties:
       TemplateURL: !Sub '${TemplateBaseURL}task1_application_template.yml'
       Parameters:
         ProjectPrefix: !Sub '${ProjectPrefix}'
